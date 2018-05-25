@@ -7,7 +7,7 @@ const fs           = require('fs')
 const join         = require('path').join
 const cors         = require('cors')
 const jwt          = require('jsonwebtoken')
-const config       = require('./config')
+const config       = require('./server/config')
 
 const app = express()
 

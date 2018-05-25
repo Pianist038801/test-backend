@@ -1,0 +1,32 @@
+[
+  {
+    "id": "bitcoin",
+    "name": "Bitcoin",
+    "symbol": "BTC"
+  },
+  {
+    "id": "ethereum",
+    "name": "Ethereum",
+    "symbol": "ETH"
+  },
+  {
+    "id": "ripple",
+    "name": "Ripple",
+    "symbol": "XRP"
+  },
+  {
+    "id": "bitcoin-cash",
+    "name": "Bitcoin Cash",
+    "symbol": "BCH"
+  },
+  {
+    "id": "eos",
+    "name": "EOS",
+    "symbol": "EOS"
+  },
+  {
+    "id": "litecoin",
+    "name": "Litecoin",
+    "symbol": "LTC"
+  }
+]
