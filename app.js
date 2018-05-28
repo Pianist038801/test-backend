@@ -6,8 +6,10 @@ const bodyParser   = require('body-parser')
 const fs           = require('fs')
 const join         = require('path').join
 const cors         = require('cors')
+const async        = require('async')
 const jwt          = require('jsonwebtoken')
 const config       = require('./server/config')
+const User         = require('./server/models/user')
 
 const app = express()
 
@@ -20,16 +22,21 @@ app.use('/static', express.static(path.join(__dirname, 'static')))
 
 app.use((req, res, next) => {
   const token = req.body.token || req.query.token || req.headers['x-access-token']
-  if (token) {
-    jwt.verify(token, config.secret, (err, decoded) => {
-      if (err == null) {
-        req.user = decoded
+
+  async.waterfall([
+    (done) => {
+      jwt.verify(token, config.secret, done)
+    },
+    (decoded, done) => {
+      User.getByEmail(decoded.email, done)
+    },
+    (result) => {
+      if (result.rows.length === 1) {
+        req.user = result.rows[0]
       }
       next()
-    })
-  } else {
-    next()
-  }
+    },
+  ], () => next())
 })
 
 /* eslint-disable */

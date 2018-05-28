@@ -1,7 +1,9 @@
 const express = require('express')
 const async = require('async')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 const User = require('../models/user')
+const config = require('../config')
 
 const router = express.Router()
 
@@ -33,7 +35,11 @@ router.post('/signup', (req, res) => {
       User.create(email, hash, done)
     },
     (result) => {
-      res.json({ user: result.rows[0] })
+      const token = jwt.sign(result.rows[0], config.secret, { expiresIn: config.expiresIn })
+      res.json({
+        token,
+        user: result.rows[0]
+      })
     },
   ],
   (err) => {
@@ -45,7 +51,44 @@ router.post('/signup', (req, res) => {
 router.post('/login', (req, res) => {
   const email = req.body.email
   const password = req.body.password
+  async.waterfall([
+    (done) => {
+      User.getByEmail(email, done)
+    },
+    (result, done) => {
+      if (result.rows.length !== 0) {
+        bcrypt.compare(password, result.rows[0].hash, (err, isValid) => {
+          done(isValid === true ? null : 'Wrong password', result.rows[0])
+        })
+      } else {
+        done('Email does not exist')
+      }
+    },
+    (userObj) => {
+      const token = jwt.sign(userObj, config.secret, { expiresIn: config.expiresIn })
+      res.json({
+        token,
+        user: userObj
+      })
+    },
+  ],
+  (err) => {
+    console.log('Login error:', err)
+    res.json({ err: 'Invalid email or password' })
+  })
+})
 
+router.get('/check-token', (req, res) => {
+  if (req.user) {
+    const token = jwt.sign(req.user, config.secret, { expiresIn: config.expiresIn })
+    res.json({
+      authorized : true,
+      token,
+      user       : req.user
+    })
+  } else {
+    res.json({ authorized: false })
+  }
 })
 
 module.exports = router
