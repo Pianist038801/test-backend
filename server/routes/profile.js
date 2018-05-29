@@ -1,7 +1,9 @@
 const express = require('express')
 const CoinMarketCap = require('node-coinmarketcap')
+const async = require('async')
 const coins = require('../config/coins.json')
 const User = require('../models/user')
+const Tx = require('../models/transaction')
 
 const coinmarketcap = new CoinMarketCap()
 
@@ -35,7 +37,42 @@ router.post('/buy-coin', (req, res) => {
     req.user.balance = newBalance
     req.user[price.id] += amount
 
-    User.update(req.user, price.id, (err) => {
+    async.waterfall([
+      (done) => {
+        User.update(req.user, price.id, err => done(err))
+      },
+      (done) => {
+        Tx.create(req.user.id, -price.price_usd * amount, amount, price.name, err => done(err))
+      },
+    ], (err) => {
+      if (err) {
+        console.log(err)
+        res.json({ err: 'DB update error' })
+      } else {
+        res.json({ user: req.user })
+      }
+    })
+  })
+})
+
+router.post('/sell-coin', (req, res) => {
+  const { amount } = req.body
+  coinmarketcap.get(req.body.price.id, (price) => {
+    if (req.user[price.id] < amount) {
+      res.json({ err: 'Do not have enough coins' })
+      return
+    }
+    req.user.balance += (price.price_usd * amount)
+    req.user[price.id] -= amount
+
+    async.waterfall([
+      (done) => {
+        User.update(req.user, price.id, err => done(err))
+      },
+      (done) => {
+        Tx.create(req.user.id, price.price_usd * amount, -amount, price.name, err => done(err))
+      },
+    ], (err) => {
       if (err) {
         res.json({ err: 'DB update error' })
       } else {
@@ -45,4 +82,13 @@ router.post('/buy-coin', (req, res) => {
   })
 })
 
+router.get('/txs', (req, res) => {
+  Tx.getByUserId(req.user.id, (err, result) => {
+    if (err) {
+      res.json({ err: 'Can not get transactions' })
+    } else {
+      res.json(result.rows)
+    }
+  })
+})
 module.exports = router
