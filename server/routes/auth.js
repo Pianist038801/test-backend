@@ -10,6 +10,8 @@ const router = express.Router()
 router.post('/signup', (req, res) => {
   const email = req.body.email
   const password = req.body.password
+  console.log('SignUp Request Body=');
+  console.log(req.body);
   async.waterfall([
     (done) => {
       if (email.length === 0 || password.length === 0) {
