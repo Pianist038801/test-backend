@@ -1,1 +1,3 @@
-# Test backend
+# X2X backend
+
+# Node.js + PostgreSQL
