@@ -8,8 +8,16 @@ const config = require('../config')
 const router = express.Router()
 
 router.post('/signup', (req, res) => {
-  const email = req.body.email
-  const password = req.body.password
+  const {
+    email,
+    password,
+    country_code,
+    first_name,
+    last_name,
+    is_attorney,
+    status,
+  } = req.body;
+
   console.log('SignUp Request Body=');
   console.log(req.body);
   async.waterfall([
@@ -24,6 +32,7 @@ router.post('/signup', (req, res) => {
       User.getByEmail(email, done)
     },
     (result, done) => {
+      console.log('Result=', result);
       if (result.rows.length === 0) {
         bcrypt.genSalt(10, done)
       } else {
@@ -31,12 +40,15 @@ router.post('/signup', (req, res) => {
       }
     },
     (salt, done) => {
+      console.log('Salt=', salt);
       bcrypt.hash(password, salt, done)
     },
     (hash, done) => {
-      User.create(email, hash, done)
+      console.log('Hash=', hash);
+      User.create(email, hash, country_code, first_name, last_name, is_attorney, status, done)
     },
     (result) => {
+      console.log('FinalResult=', result);
       const token = jwt.sign(result.rows[0], config.secret, { expiresIn: config.expiresIn })
       res.json({
         token,
